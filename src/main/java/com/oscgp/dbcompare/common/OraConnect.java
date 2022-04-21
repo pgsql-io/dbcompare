@@ -4,6 +4,7 @@
  */
 package com.oscgp.dbcompare.common;
 
+import static com.oscgp.dbcompare.common.Utility.printLog;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -26,8 +27,13 @@ public class OraConnect {
 
     DatabaseMetaData metadata = null;
     Connection con = null;
+    boolean verbose = false;
 
     public OraConnect() {
+    }
+
+    public OraConnect(boolean verbose) {
+        this.verbose = verbose;
     }
 
     public boolean connectOracle(String connectionString, String user, String password) {
@@ -197,13 +203,15 @@ public class OraConnect {
 
     public ArrayList<String> getSchemaTables(String schemaName) {
         ArrayList<String> tableNames = new ArrayList<String>();
-        String getTablesQuery = "SELECT table_name FROM dba_tables WHERE owner='" + schemaName + "' ORDER BY table_name";
+        String query = "SELECT table_name FROM dba_tables WHERE owner='" + schemaName + "' AND nested = 'NO' AND iot_type IS NULL AND table_name NOT LIKE '%$%' ORDER BY table_name";
         try {
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(getTablesQuery);
+            ResultSet rs = stmt.executeQuery(query);
+            printLog(query, verbose);
             while (rs.next()) {
                 tableNames.add(rs.getString(1));
             }
+            rs.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -212,13 +220,16 @@ public class OraConnect {
 
     public int getTableRowCount(String schemaName, String tableName) {
         int rowCount = 0;
+        String query = "SELECT count(*) "
+                    + "FROM " + schemaName + "." + tableName;
         try {
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("select count(*) \n"
-                    + "from " + schemaName + "." + tableName);
+            ResultSet rs = stmt.executeQuery(query);
+            printLog(query, verbose);
             while (rs.next()) {
                 rowCount = rs.getInt(1);
             }
+            rs.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -227,20 +238,23 @@ public class OraConnect {
 
     public int getTableIndexCount(String schemaName, String tableName) {
         int count = 0;
+        String query = "SELECT count(*) "
+                    + "FROM dba_indexes WHERE table_owner = '" + schemaName + "' AND table_name = '" + tableName + "'";
         try {
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("select count(*) \n"
-                    + "from dba_indexes where TABLE_OWNER = '" + schemaName + "' and TABLE_NAME = '" + tableName + "'");
+            ResultSet rs = stmt.executeQuery(query);
+            printLog(query, verbose);
             while (rs.next()) {
                 count = rs.getInt(1);
             }
+            rs.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return count;
     }
 
-    public void writeTablesRowCount(String[] schemaNames) {
+    public void writeTablesInfo(String[] schemaNames) {
         String oraFileName = "ora.csv";
         File oraFile = new File(oraFileName);
         oraFile.delete();

@@ -4,6 +4,7 @@
  */
 package com.oscgp.dbcompare.common;
 
+import static com.oscgp.dbcompare.common.Utility.printLog;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -26,8 +27,13 @@ public class PGConnect {
 
     DatabaseMetaData metadata = null;
     Connection con = null;
+    Boolean verbose = false;
 
     public PGConnect() {
+    }
+
+    public PGConnect(boolean verbose) {
+        this.verbose = verbose;
     }
 
     public boolean connectPG(String connectionString, String user, String password) {
@@ -194,11 +200,14 @@ public class PGConnect {
 
     public ArrayList<String> getSchemaTables(String schemaName) {
         ArrayList<String> tableNames = new ArrayList<String>();
+        String query = "SELECT tablename "
+                    + "FROM pg_catalog.pg_tables "
+                    + "WHERE schemaname = '" + schemaName
+                    + "' AND tablename NOT LIKE '%$%' ORDER BY tablename ;";
         try {
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("select tablename \n"
-                    + "from pg_catalog.pg_tables \n"
-                    + "where schemaname = '" + schemaName + "' order by tablename ;");
+            ResultSet rs = stmt.executeQuery(query);
+            printLog(query, verbose);
             while (rs.next()) {
                 tableNames.add(rs.getString(1));
             }
@@ -210,10 +219,12 @@ public class PGConnect {
 
     public int getTableRowCount(String schemaName, String tableName) {
         int rowCount = 0;
+        String query = "SELECT count(*) "
+                    + "FROM " + schemaName + "." + tableName + ";";
         try {
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("select count(*) \n"
-                    + "from " + schemaName + "." + tableName + ";");
+            ResultSet rs = stmt.executeQuery(query);
+            printLog(query, verbose);
             while (rs.next()) {
                 rowCount = rs.getInt(1);
             }
@@ -225,10 +236,12 @@ public class PGConnect {
 
     public int getTableIndexCount(String schemaName, String tableName) {
         int count = 0;
+        String query = "SELECT count(*) "
+                    + "FROM pg_indexes WHERE schemaname = '" + schemaName + "' AND tablename = '" + tableName + "';";
         try {
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("select count(*) \n"
-                    + "from pg_indexes where schemaname = '" + schemaName + "' and tablename = '" + tableName + "';");
+            ResultSet rs = stmt.executeQuery(query);
+            printLog(query, verbose);
             while (rs.next()) {
                 count = rs.getInt(1);
             }
