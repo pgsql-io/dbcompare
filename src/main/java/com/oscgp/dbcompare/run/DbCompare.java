@@ -24,11 +24,13 @@ import org.apache.commons.cli.ParseException;
  * @author Muhammad Asif Naeem
  */
 public class DbCompare {
+
     public static void main(String[] args) {
         String[] schemaNames = null;
         String configFile = "dbcompare.conf";
         Boolean verbose = false;
         Boolean mandatoryOptionProvided = false;
+        String database = null;
         // create the command line parser
         CommandLineParser cmdParser = new DefaultParser();
         Options osOptions = new Options();
@@ -38,6 +40,13 @@ public class DbCompare {
                 .desc("the schemas information e.g. -s schema1 schema2")
                 .build();
         osOptions.addOption(oSchemas);
+
+        Option oDatabase = Option.builder("d")
+                .argName("database")
+                .hasArg()
+                .desc("select the database (PG or ORA)")
+                .build();
+        osOptions.addOption(oDatabase);
 
         Option oVerbose = Option.builder("v")
                 .argName("verbose")
@@ -65,6 +74,14 @@ public class DbCompare {
                 verbose = true;
             }
 
+            if (clOptions.hasOption("d")) {
+                database = clOptions.getOptionValue("d");
+                if(!(database.compareToIgnoreCase("ORA")==0 || database.compareToIgnoreCase("PG")==0)) {
+                    System.out.println("invalid value '" + database + "' provided for option -d");
+                    System.exit(1);
+                }
+            }
+
             if (!mandatoryOptionProvided) {
                 System.err.println("no suitable option provided");
                 HelpFormatter formatter = new HelpFormatter();
@@ -81,26 +98,33 @@ public class DbCompare {
             prop.load(fis);
         } catch (FileNotFoundException ex) {
             System.err.println("Unable to find config file '" + configFile + "'");
-                System.exit(1);            
-        } catch (IOException ex) {        
+            System.exit(1);
+        } catch (IOException ex) {
             System.err.println("Unable to read config file '" + configFile + "'");
-                System.exit(1);
+            System.exit(1);
         }
-    
-        System.out.println("***************************************************");
-        System.out.println("PostgreSQL ...");
-        System.out.println("***************************************************");
-        PGConnect pgCon = new PGConnect(verbose);
-        pgCon.connectPG(prop.getProperty("pg.connect"), prop.getProperty("pg.user"),
-                prop.getProperty("pg.password"));
-        pgCon.writeTablesInfo(schemaNames);
-        System.out.println("***************************************************");
-        System.out.println("Oracle ...");
-        System.out.println("***************************************************");
-        OraConnect oraCon = new OraConnect(verbose);
-        oraCon.connectOracle(prop.getProperty("ora.connect"), prop.getProperty("ora.user"),
-                prop.getProperty("ora.password"));
-        oraCon.writeTablesInfo(schemaNames);
-        System.out.println("***************************************************");
+
+        PGConnect pgCon = new PGConnect(verbose, prop);
+        if(database == null || database.compareToIgnoreCase("PG") == 0) {
+            pgCon.setSchemaNames(schemaNames);
+            pgCon.start();
+        }
+
+        OraConnect oraCon = new OraConnect(verbose, prop);
+        if(database == null || database.compareToIgnoreCase("ORA") == 0) {
+            oraCon.setSchemaNames(schemaNames);
+            oraCon.start();
+        }
+
+        try {
+            if(pgCon.isAlive()) {
+                pgCon.join();
+            }
+            if(oraCon.isAlive()) {
+                oraCon.join();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

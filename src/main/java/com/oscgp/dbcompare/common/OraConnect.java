@@ -16,6 +16,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,17 +24,31 @@ import java.util.logging.Logger;
  *
  * @author asif
  */
-public class OraConnect {
+public class OraConnect extends Thread {
 
     DatabaseMetaData metadata = null;
     Connection con = null;
     boolean verbose = false;
+    Properties prop = null;
+    String[] schemaNames = null;
 
     public OraConnect() {
     }
 
-    public OraConnect(boolean verbose) {
+    public OraConnect(boolean verbose, Properties prop) {
         this.verbose = verbose;
+        this.prop = prop;
+    }
+
+    @Override
+    public void run() {
+        connectOracle(prop.getProperty("ora.connect"), prop.getProperty("ora.user"),
+                prop.getProperty("ora.password"));
+        writeTablesInfo(schemaNames);
+    }
+
+    public void setSchemaNames(String[] schemaNames) {
+        this.schemaNames = schemaNames;
     }
 
     public boolean connectOracle(String connectionString, String user, String password) {
@@ -221,7 +236,7 @@ public class OraConnect {
     public long getTableRowCount(String schemaName, String tableName) {
         long rowCount = 0;
         String query = "SELECT count(*) "
-                    + "FROM " + schemaName + "." + tableName;
+                + "FROM " + schemaName + "." + tableName;
         try {
             Statement stmt = con.createStatement();
             ResultSet rs = stmt.executeQuery(query);
@@ -239,7 +254,7 @@ public class OraConnect {
     public int getTableIndexCount(String schemaName, String tableName) {
         int count = 0;
         String query = "SELECT count(*) "
-                    + "FROM dba_indexes WHERE table_owner = '" + schemaName + "' AND table_name = '" + tableName + "'";
+                + "FROM dba_indexes WHERE table_owner = '" + schemaName + "' AND table_name = '" + tableName + "'";
         try {
             Statement stmt = con.createStatement();
             ResultSet rs = stmt.executeQuery(query);

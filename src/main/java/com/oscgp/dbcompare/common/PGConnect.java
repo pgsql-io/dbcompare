@@ -16,6 +16,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,17 +24,31 @@ import java.util.logging.Logger;
  *
  * @author asif
  */
-public class PGConnect {
+public class PGConnect extends Thread {
 
     DatabaseMetaData metadata = null;
     Connection con = null;
     Boolean verbose = false;
+    Properties prop = null;
+    String[] schemaNames = null;
 
     public PGConnect() {
     }
 
-    public PGConnect(boolean verbose) {
+    public PGConnect(boolean verbose, Properties prop) {
         this.verbose = verbose;
+        this.prop = prop;
+    }
+
+    @Override
+    public void run() {
+        connectPG(prop.getProperty("pg.connect"), prop.getProperty("pg.user"),
+                prop.getProperty("pg.password"));
+        writeTablesInfo(schemaNames);
+    }
+
+    public void setSchemaNames(String[] schemaNames) {
+        this.schemaNames = schemaNames;
     }
 
     public boolean connectPG(String connectionString, String user, String password) {
