@@ -8,6 +8,17 @@ PostgreSQL.
 `dbcompare.conf` file can be used to change settings e.g. Oracle and PostgreSQL
 connection information.
 
+## Options
+
+`dbcompare` utility provide multiple command line options to facilitate the user.
+
+### schemas (-s)
+This option can be used to specify multiple schemas e.g. -s schema1 schema2 s3.
+
+### verbose (-v)
+Use this option to show the background activities e.g. SQL queries with time
+stamp.
+
 ## Run
 
 The utility can be executed on unix/linux as following i.e.

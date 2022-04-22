@@ -200,10 +200,14 @@ public class PGConnect {
 
     public ArrayList<String> getSchemaTables(String schemaName) {
         ArrayList<String> tableNames = new ArrayList<String>();
-        String query = "SELECT tablename "
-                    + "FROM pg_catalog.pg_tables "
-                    + "WHERE schemaname = '" + schemaName
-                    + "' AND tablename NOT LIKE '%$%' ORDER BY tablename ;";
+        String query = "SELECT c.relname AS \"tablename\" "
+                + "FROM   pg_catalog.pg_class c "
+                + "JOIN   pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
+                + "WHERE  c.relkind = ANY ('{p,r,\"\"}') "
+                + "AND    NOT c.relispartition "
+                + "AND    n.nspname = '" + schemaName + "' "
+                + "AND    c.relname NOT LIKE '%$%' "
+                + "ORDER  BY 1;";
         try {
             Statement stmt = con.createStatement();
             ResultSet rs = stmt.executeQuery(query);
@@ -217,8 +221,8 @@ public class PGConnect {
         return tableNames;
     }
 
-    public int getTableRowCount(String schemaName, String tableName) {
-        int rowCount = 0;
+    public long getTableRowCount(String schemaName, String tableName) {
+        long rowCount = 0;
         String query = "SELECT count(*) "
                     + "FROM " + schemaName + "." + tableName + ";";
         try {
@@ -226,7 +230,7 @@ public class PGConnect {
             ResultSet rs = stmt.executeQuery(query);
             printLog(query, verbose);
             while (rs.next()) {
-                rowCount = rs.getInt(1);
+                rowCount = rs.getLong(1);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -261,7 +265,7 @@ public class PGConnect {
             for (String schemaName : schemaNames) {
                 ArrayList<String> tableNames = getSchemaTables(schemaName);
                 for (String tableName : tableNames) {
-                    int rowCount = getTableRowCount(schemaName, tableName);
+                    long rowCount = getTableRowCount(schemaName, tableName);
                     int indexCount = getTableIndexCount(schemaName, tableName);
                     fWriter.write(schemaName + "." + tableName + "," + rowCount + "," + indexCount + "\n");
                 }

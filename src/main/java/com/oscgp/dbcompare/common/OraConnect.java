@@ -218,8 +218,8 @@ public class OraConnect {
         return tableNames;
     }
 
-    public int getTableRowCount(String schemaName, String tableName) {
-        int rowCount = 0;
+    public long getTableRowCount(String schemaName, String tableName) {
+        long rowCount = 0;
         String query = "SELECT count(*) "
                     + "FROM " + schemaName + "." + tableName;
         try {
@@ -227,7 +227,7 @@ public class OraConnect {
             ResultSet rs = stmt.executeQuery(query);
             printLog(query, verbose);
             while (rs.next()) {
-                rowCount = rs.getInt(1);
+                rowCount = rs.getLong(1);
             }
             rs.close();
         } catch (SQLException e) {
@@ -265,7 +265,7 @@ public class OraConnect {
                 schemaName = schemaName.toUpperCase();
                 ArrayList<String> tableNames = getSchemaTables(schemaName);
                 for (String tableName : tableNames) {
-                    int rowCount = getTableRowCount(schemaName, tableName);
+                    long rowCount = getTableRowCount(schemaName, tableName);
                     int indexCount = getTableIndexCount(schemaName, tableName);
                     fWriter.write(schemaName.toLowerCase() + "."
                             + tableName.toLowerCase() + ","
