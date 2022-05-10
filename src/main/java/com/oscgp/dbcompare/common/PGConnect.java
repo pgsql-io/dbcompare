@@ -45,6 +45,8 @@ public class PGConnect extends Thread {
         connectPG(prop.getProperty("pg.connect"), prop.getProperty("pg.user"),
                 prop.getProperty("pg.password"));
         writeTablesInfo(schemaNames);
+        writeViewsInfo(schemaNames);
+        writeMViewsInfo(schemaNames);
     }
 
     public void setSchemaNames(String[] schemaNames) {
@@ -236,6 +238,42 @@ public class PGConnect extends Thread {
         return tableNames;
     }
 
+    public ArrayList<String> getSchemaViews(String schemaName) {
+        ArrayList<String> tableNames = new ArrayList<String>();
+        String query = "SELECT viewname FROM pg_catalog.pg_views " +
+                       "WHERE schemaname = '" + schemaName + "' " +
+                       "ORDER BY 1;";
+        try {
+            Statement stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            printLog(query, verbose);
+            while (rs.next()) {
+                tableNames.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tableNames;
+    }
+
+    public ArrayList<String> getSchemaMViews(String schemaName) {
+        ArrayList<String> tableNames = new ArrayList<String>();
+        String query = "SELECT matviewname FROM pg_catalog.pg_matviews " +
+                       "WHERE schemaname = '" + schemaName + "' " +
+                       "ORDER BY 1;";
+        try {
+            Statement stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            printLog(query, verbose);
+            while (rs.next()) {
+                tableNames.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tableNames;
+    }
+
     public long getTableRowCount(String schemaName, String tableName) {
         long rowCount = 0;
         String query = "SELECT count(*) "
@@ -271,7 +309,7 @@ public class PGConnect extends Thread {
     }
 
     public void writeTablesInfo(String[] schemaNames) {
-        String pgFileName = "pg.csv";
+        String pgFileName = "pg_tables.csv";
         File pgFile = new File(pgFileName);
         pgFile.delete();
 
@@ -283,6 +321,51 @@ public class PGConnect extends Thread {
                     long rowCount = getTableRowCount(schemaName, tableName);
                     int indexCount = getTableIndexCount(schemaName, tableName);
                     fWriter.write(schemaName + "." + tableName + "," + rowCount + "," + indexCount + "\n");
+                }
+            }
+            System.out.println("PostgreSQL stats file (CSV) '" + pgFileName + "' created");
+            fWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //TODO: combine all these similar methods as one method
+    public void writeViewsInfo(String[] schemaNames) {
+        String pgFileName = "pg_views.csv";
+        File pgFile = new File(pgFileName);
+        pgFile.delete();
+
+        try {
+            FileWriter fWriter = new FileWriter(pgFile, false);
+            for (String schemaName : schemaNames) {
+                ArrayList<String> tableNames = getSchemaViews(schemaName);
+                for (String viewName : tableNames) {
+                    long rowCount = getTableRowCount(schemaName, viewName);
+                    fWriter.write(schemaName + "." + viewName + "," + rowCount + "\n");
+                }
+            }
+            System.out.println("PostgreSQL stats file (CSV) '" + pgFileName + "' created");
+            fWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //TODO: combine all these similar methods as one method
+    public void writeMViewsInfo(String[] schemaNames) {
+        String pgFileName = "pg_mviews.csv";
+        File pgFile = new File(pgFileName);
+        pgFile.delete();
+
+        try {
+            FileWriter fWriter = new FileWriter(pgFile, false);
+            for (String schemaName : schemaNames) {
+                ArrayList<String> tableNames = getSchemaMViews(schemaName);
+                for (String viewName : tableNames) {
+                    long rowCount = getTableRowCount(schemaName, viewName);
+                    int indexCount = getTableIndexCount(schemaName, viewName);
+                    fWriter.write(schemaName + "." + viewName + "," + rowCount + "," + indexCount + "\n");
                 }
             }
             System.out.println("PostgreSQL stats file (CSV) '" + pgFileName + "' created");

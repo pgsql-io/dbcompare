@@ -45,6 +45,8 @@ public class OraConnect extends Thread {
         connectOracle(prop.getProperty("ora.connect"), prop.getProperty("ora.user"),
                 prop.getProperty("ora.password"));
         writeTablesInfo(schemaNames);
+        writeViewsInfo(schemaNames);
+        writeMViewsInfo(schemaNames);
     }
 
     public void setSchemaNames(String[] schemaNames) {
@@ -233,6 +235,38 @@ public class OraConnect extends Thread {
         return tableNames;
     }
 
+    public ArrayList<String> getSchemaViews(String schemaName) {
+        ArrayList<String> tableNames = new ArrayList<String>();
+        String query = "SELECT view_name FROM dba_views WHERE owner='" + schemaName + "' ORDER BY view_name";
+        try {
+            Statement stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            printLog(query, verbose);
+            while (rs.next()) {
+                tableNames.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tableNames;
+    }
+
+    public ArrayList<String> getSchemaMViews(String schemaName) {
+        ArrayList<String> tableNames = new ArrayList<String>();
+        String query = "SELECT mview_name FROM dba_mviews WHERE owner='" + schemaName + "' ORDER BY mview_name";
+        try {
+            Statement stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            printLog(query, verbose);
+            while (rs.next()) {
+                tableNames.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tableNames;
+    }
+    
     public long getTableRowCount(String schemaName, String tableName) {
         long rowCount = 0;
         String query = "SELECT count(*) "
@@ -270,7 +304,7 @@ public class OraConnect extends Thread {
     }
 
     public void writeTablesInfo(String[] schemaNames) {
-        String oraFileName = "ora.csv";
+        String oraFileName = "ora_tables.csv";
         File oraFile = new File(oraFileName);
         oraFile.delete();
 
@@ -288,6 +322,53 @@ public class OraConnect extends Thread {
                 }
             }
             System.out.println("Oracle stats file (CSV) '" + oraFileName + "' created");
+            fWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //TODO: combine all these similar methods as one method
+    public void writeViewsInfo(String[] schemaNames) {
+        String pgFileName = "ora_views.csv";
+        File pgFile = new File(pgFileName);
+        pgFile.delete();
+
+        try {
+            FileWriter fWriter = new FileWriter(pgFile, false);
+            for (String schemaName : schemaNames) {
+                schemaName = schemaName.toUpperCase();
+                ArrayList<String> tableNames = getSchemaViews(schemaName);
+                for (String viewName : tableNames) {
+                    long rowCount = getTableRowCount(schemaName, viewName);
+                    fWriter.write(schemaName + "." + viewName + "," + rowCount + "\n");
+                }
+            }
+            System.out.println("Oracle stats file (CSV) '" + pgFileName + "' created");
+            fWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //TODO: combine all these similar methods as one method
+    public void writeMViewsInfo(String[] schemaNames) {
+        String pgFileName = "ora_mviews.csv";
+        File pgFile = new File(pgFileName);
+        pgFile.delete();
+
+        try {
+            FileWriter fWriter = new FileWriter(pgFile, false);
+            for (String schemaName : schemaNames) {
+                schemaName = schemaName.toUpperCase();
+                ArrayList<String> tableNames = getSchemaMViews(schemaName);
+                for (String viewName : tableNames) {
+                    long rowCount = getTableRowCount(schemaName, viewName);
+                    int indexCount = getTableIndexCount(schemaName, viewName);
+                    fWriter.write(schemaName + "." + viewName + "," + rowCount + "," + indexCount + "\n");
+                }
+            }
+            System.out.println("Oracle stats file (CSV) '" + pgFileName + "' created");
             fWriter.close();
         } catch (IOException e) {
             e.printStackTrace();

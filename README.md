@@ -24,7 +24,8 @@ stamp.
 The utility can be executed on unix/linux as following i.e.
 	`./dbcompare.sh -s schema1 schema2`
 
-It will create 2 CSV files as `pg.csv` and `ora.csv` in the following format i.e.
+It will create 6 CSV files as `pg_*.csv` and `ora_*.csv` for Tables, Views and
+Materialized views in the following format i.e.
 	`table_name,row_count,index_count`
 
 These generated files can be compared with diff or similar utilities.
