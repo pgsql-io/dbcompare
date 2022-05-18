@@ -1,4 +1,4 @@
-nbactions.xml
-target/
-lib/
-dbcompare_pkg/
+java/nbactions.xml
+java/target/
+java/lib/
+java/dbcompare_pkg/
