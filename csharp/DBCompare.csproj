@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Npgsql" />
+    <None Remove="CommandLineParser" />
+    <None Remove="Oracle.ManagedDataAccess" />
+    <None Remove="System.Drawing.Common" />
+    <None Remove="System.Configuration.ConfigurationManager" />
+    <None Remove="System.Data.OracleClient" />
+    <None Remove="Oracle.ManagedDataAccess.Core" />
+    <None Remove="System.CommandLine.Parser" />
+    <None Remove="System.CommandLine" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="6.0.4" />
+    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="3.21.61" />
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+  </ItemGroup>
+</Project>
