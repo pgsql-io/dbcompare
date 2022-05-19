@@ -14,7 +14,7 @@ namespace DBCompare
         class Options
         {
             [Option('s', "schemas", Required = true, HelpText = "the schemas information e.g. -s schema1 schema2")]
-            public string[] InputSchemas { get; set; }
+            public string InputSchemas { get; set; }
 
             [Option('v', "verbose", Default = false, Required = false, HelpText = "print the background activities")]
             public bool Verbose { get; set; }
@@ -34,7 +34,7 @@ namespace DBCompare
             if (opts.InputSchemas != null)
             {
                 Console.WriteLine("input schemas : " + opts.InputSchemas);
-                schemaNames.Add((String)opts.InputSchemas.GetValue(0));
+                schemaNames.Add((String)opts.InputSchemas);
             }
             if (opts.InputDatabase != null)
             {
